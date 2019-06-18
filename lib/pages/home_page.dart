@@ -15,7 +15,7 @@ class HomePage extends StatefulWidget {
   }
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +34,13 @@ class _HomePageState extends State<HomePage> {
             String leaderPhone = data['data']['shopInfo']['leaderPhone']; // 店长电话
             List<Map> recommendList = (data['data']['recommend'] as List).cast();
 
+            String floor1Title = data['data']['floor1Pic']['PICTURE_ADDRESS'];
+            String floor2Title = data['data']['floor2Pic']['PICTURE_ADDRESS'];
+            String floor3Title = data['data']['floor3Pic']['PICTURE_ADDRESS'];
+            List<Map> floor1 = (data['data']['floor1'] as List).cast();
+            List<Map> floor2 = (data['data']['floor2'] as List).cast();
+            List<Map> floor3 = (data['data']['floor3'] as List).cast();
+
             if (navigatorList.length > 10) {
               navigatorList.removeRange(10, navigatorList.length);
             }
@@ -44,7 +51,15 @@ class _HomePageState extends State<HomePage> {
                     TopNavigator(navigatorList: navigatorList,),
                     AdBannerWidget(advertesPicture: advertesPicture,),
                     LeaderPhone(leaderImage: leaderImage, leaderPhone: leaderPhone,),
-                    Recommend(recommendList: recommendList,)
+                    Recommend(recommendList: recommendList,),
+                    FloorTitle(picture_address: floor1Title,),
+                    FloorContent(floorGoodsList: floor1,),
+                    
+                    FloorTitle(picture_address: floor2Title,),
+                    FloorContent(floorGoodsList: floor2,),
+
+                    FloorTitle(picture_address: floor3Title,),
+                    FloorContent(floorGoodsList: floor3,),
                   ],
                 )
             );
@@ -57,6 +72,14 @@ class _HomePageState extends State<HomePage> {
       ),);
   }
 
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    print(';1111111');
+  }
 }
 
 class SwiperDiyWidget extends StatelessWidget {
@@ -184,7 +207,7 @@ class Recommend extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            left: BorderSide(width: 0.5, color: Colors.black12)
+            left: BorderSide(width: 1, color: Colors.black12)
           )
         ),
         child: Column(
@@ -202,13 +225,74 @@ class Recommend extends StatelessWidget {
   }
 
   Widget _recommendList() {
-    return Container(child: ListView.builder(
+    return Container(
+      height: ScreenUtil().setHeight(330),
+      child: ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: recommendList.length,
       itemBuilder: (context, index) {
         return _item(index);
       },
     ),);
+  }
+}
+
+class FloorTitle extends StatelessWidget {
+  final String picture_address; // 图片地址
+  FloorTitle({Key key, this.picture_address}) :super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(8.0),
+      child: Image.network(picture_address),
+    );
+  }
+}
+
+class FloorContent extends StatelessWidget {
+
+  final List floorGoodsList;
+
+  FloorContent({Key key, this.floorGoodsList}):super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(child: Column(
+      children: <Widget>[
+        _firstRow(),
+        _otherGoods(),
+      ],
+    ),);
+  }
+
+  Widget _firstRow() {
+    return Row(children: <Widget>[
+      _goodsItem(floorGoodsList[0]),
+      Column(
+        children: <Widget>[
+          _goodsItem(floorGoodsList[1]),
+          _goodsItem(floorGoodsList[2]),
+        ],
+      )
+    ],);
+  }
+
+  Widget _otherGoods() {
+    return Row(children: <Widget>[
+      _goodsItem(floorGoodsList[3]),
+      _goodsItem(floorGoodsList[4]),
+    ],);
+  }
+
+  Widget _goodsItem(Map goods) {
+    return Container(
+      width: ScreenUtil().setWidth(375),
+      child: InkWell(
+        onTap: () {print('点击了楼层商品');},
+        child: Image.network(goods['image']),
+      ),
+    );
   }
 }
 
