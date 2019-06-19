@@ -5,6 +5,7 @@ import 'package:flutter_shop/service/service_method.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_shop/widget/ad_banner_widget.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:flutter_easyrefresh/easy_refresh.dart';
 // import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,8 +18,77 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
 
+  int page = 1;
+  List<Map> hotGoodsList = [];
+
+  Widget hotTitle = Container(
+    margin: EdgeInsets.only(top: 10.0),
+    padding: EdgeInsets.all(5.0),
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border(bottom: BorderSide(width: 0.5, color: Colors.black12))),
+      child: Text('火爆专区'),
+  );
+
+  /// 火爆专区子项
+  Widget _wrapList() {
+    if (hotGoodsList.length != 0) {
+      List<Widget> listWidget = hotGoodsList.map((val) {
+        return InkWell(
+          onTap: () {print('点击了火爆商品');},
+          child: Container(
+            width: ScreenUtil().setWidth(372),
+            color: Colors.white,
+            padding: EdgeInsets.all(5.0),
+            margin: EdgeInsets.only(bottom: 3.0),
+            child: Column(
+              children: <Widget>[
+                Image.network(val['image'], width: ScreenUtil().setWidth(375)),
+                Text(val['name'], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.pink, fontSize: ScreenUtil().setSp(26))),
+                Row(
+                  children: <Widget>[
+                    Text('￥${val['mallPrice']}'),
+                    Text('￥${val['price']}', style: TextStyle(color: Colors.black26, decoration: TextDecoration.lineThrough),)
+                  ],
+                )
+              ],
+            ),
+          ),);
+      }).toList();
+
+      return Wrap(spacing: 2, children: listWidget,);
+    } else {
+      return Text(' ');
+    }
+  }
+
+  /// 火爆专区组合
+  Widget _hotGoods() {
+    return Container(child: Column(
+      children: <Widget>[
+        hotTitle,
+        _wrapList()
+      ],
+    ),);
+  }
+
+  void _getHotGoods() {
+    var query = {'page': page};
+    request('getHomePageBelowConten', query: query).then((val) {
+      var data = json.decode(val.toString());
+      print(data);
+      List<Map> newGoodsList = (data['data'] as List).cast();
+      setState(() {
+        hotGoodsList.addAll(newGoodsList);
+        page++;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    ScreenUtil.instance = ScreenUtil(width: 750, height: 1334)..init(context);
     return Scaffold(
       appBar: AppBar(title: Text('百姓生活+'),),
       body: FutureBuilder(
@@ -44,24 +114,39 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
             if (navigatorList.length > 10) {
               navigatorList.removeRange(10, navigatorList.length);
             }
-            return SingleChildScrollView(
-                child: Column(
-                  children: <Widget>[
-                    SwiperDiyWidget(swiperDataList: swiperDataList,),
-                    TopNavigator(navigatorList: navigatorList,),
-                    AdBannerWidget(advertesPicture: advertesPicture,),
-                    LeaderPhone(leaderImage: leaderImage, leaderPhone: leaderPhone,),
-                    Recommend(recommendList: recommendList,),
-                    FloorTitle(picture_address: floor1Title,),
-                    FloorContent(floorGoodsList: floor1,),
-                    
-                    FloorTitle(picture_address: floor2Title,),
-                    FloorContent(floorGoodsList: floor2,),
+            return EasyRefresh(
+              child: ListView(
+                children: <Widget>[
+                  SwiperDiyWidget(swiperDataList: swiperDataList,),
+                  TopNavigator(navigatorList: navigatorList,),
+                  AdBannerWidget(advertesPicture: advertesPicture,),
+                  LeaderPhone(leaderImage: leaderImage, leaderPhone: leaderPhone,),
+                  Recommend(recommendList: recommendList,),
+                  FloorTitle(picture_address: floor1Title,),
+                  FloorContent(floorGoodsList: floor1,),
+                  
+                  FloorTitle(picture_address: floor2Title,),
+                  FloorContent(floorGoodsList: floor2,),
 
-                    FloorTitle(picture_address: floor3Title,),
-                    FloorContent(floorGoodsList: floor3,),
-                  ],
-                )
+                  FloorTitle(picture_address: floor3Title,),
+                  FloorContent(floorGoodsList: floor3,),
+                  _hotGoods(),
+                ],
+              ),
+              loadMore: () async {
+                print('开始加载更多');
+                _getHotGoods();
+              },
+              // refreshFooter: ClassicsFooter(
+                // key: _footerKey,
+                // bgColor: Colors.white,
+                // textColor: Colors.pink,
+                // moreInfoColor: Colors.pink,
+                // showMore: true,
+                // noMoreText: '',
+                // moreInfo: '加载中',
+                // loadReadyText: '上拉加载...',
+              // ),
             );
           } else {
             return Center(
@@ -78,7 +163,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   @override
   void initState() {
     super.initState();
-    print(';1111111');
+    _getHotGoods();
   }
 }
 
@@ -89,7 +174,7 @@ class SwiperDiyWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ScreenUtil.instance = ScreenUtil(width: 750, height: 1334)..init(context);
+    
     return Container(
       height: ScreenUtil().setHeight(333),
       width: ScreenUtil().setWidth(750),
@@ -127,6 +212,7 @@ class TopNavigator extends StatelessWidget {
       height: ScreenUtil().setHeight(320),
       padding: EdgeInsets.all(3.0),
       child: GridView.count(
+        physics: NeverScrollableScrollPhysics(),
         crossAxisCount: 5,
         padding: EdgeInsets.all(4.0),
         children: navigatorList.map((item) {
